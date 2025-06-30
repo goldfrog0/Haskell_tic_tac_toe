@@ -37,8 +37,7 @@ drawGrid = pictures $ map (color white)
   [ horizontalLine1
   , horizontalLine2
   , verticalLine1
-  , verticalLine2
-  ]
+  , verticalLine2 ]
   where
     horizontalLine1 = line [(-300, 100), (300, 100)]
     horizontalLine2 = line [(-300, -100), (300, -100)]
@@ -88,14 +87,17 @@ placeText :: String -> Picture
 placeText str = scale 0.3 0.3 $ translate (-700) 1050 $ color white $ text str
 
 handleEvent :: Event -> GameState -> GameState
-handleEvent (EventKey (MouseButton LeftButton) Up _ (x, y)) state
-  | isNothing $ gameOver state = tryPlacingMarkAt x y state
-handleEvent _ state = state
+handleEvent (EventKey (MouseButton LeftButton) Up _ (x, y)) state -- Catches mouse left click
+  | isNothing $ gameOver state = tryPlacingMarkAt x y state  -- if the game is a not a draw or win, try player move
+  | otherwise = state       --Reduntant default state
+handleEvent _ state = state --Ignores any other input
 
 tryPlacingMarkAt :: Float -> Float -> GameState -> GameState
 tryPlacingMarkAt x y state =
   case positionToCell x y of
+    Nothing -> state
     (Just idx) -> case makeMove (board state) idx (currentPlayer state) of
+      Nothing -> state
       Just newBoard ->
         let newGameOver = case checkWin newBoard of
               Just winner -> Just (Just winner)
@@ -105,8 +107,6 @@ tryPlacingMarkAt x y state =
         in state { board = newBoard
                  , currentPlayer = switchPlayer (currentPlayer state)
                  , gameOver = newGameOver }
-      Nothing -> state
-    Nothing -> state
 
 positionToCell :: Float -> Float -> Maybe Int
 positionToCell x y
@@ -142,14 +142,9 @@ insertAt item (_:xs) 0  = item:xs
 insertAt item (x:xs) position = x:insertAt item xs (position -1)
 
 checkLines :: [[Int]]
-checkLines = [[0,1,2],
-              [3,4,5],
-              [6,7,8],
-              [0,3,6],
-              [1,4,7],
-              [2,5,8],
-              [0,4,8],
-              [2,4,6]]
+checkLines = [ [0,1,2], [3,4,5], [6,7,8]
+             , [0,3,6], [1,4,7], [2,5,8]
+             , [0,4,8], [2,4,6]]
 
 checkWin :: Board -> Maybe Player
 checkWin currentboard = aux currentboard checkLines
@@ -167,23 +162,20 @@ isDraw currentboard = all isJust currentboard &&
                  Just _  -> False
                  Nothing -> True
 
---TODO refactor code with any all pattern
 xWin :: Board -> [Int] -> Bool
-xWin currentboard indices = all (== Just X) $ map (currentboard !!) indices
+xWin currentboard indices = all ((== Just X) . (currentboard !!)) indices
 oWin :: Board -> [Int] -> Bool
-oWin currentboard indices = all (== Just O) $ map (currentboard !!) indices
+oWin currentboard indices = all ((== Just O) . (currentboard !!)) indices
 
 testBoardDraw :: Board
 testBoardDraw = [ Just X, Just O, Just X
                   , Just X, Just O, Just O
-                  , Just O, Just X, Just X
-                  ]
+                  , Just O, Just X, Just X]
 
 testBoardxwin :: Board
 testBoardxwin = [ Just X, Nothing, Just O
                   , Just X, Just X, Just X
-                  , Just O, Nothing, Nothing
-                  ]
+                  , Just O, Nothing, Nothing]
 
 switchPlayer :: Player -> Player
 switchPlayer X = O
