@@ -1,7 +1,6 @@
 module Main where
 
 import Data.Maybe
-import Text.Read
 import Graphics.Gloss
 import Graphics.Gloss.Interface.Pure.Game
 
@@ -56,12 +55,14 @@ intToGrid 5 = (200, 0)
 intToGrid 6 = (-200, -200)
 intToGrid 7 = (0, -200)
 intToGrid 8 = (200, -200)
+intToGrid _ = (0,0)
 
 drawMark :: Int -> Maybe Player -> Picture
 drawMark cell (Just X) = drawX $ intToGrid cell
 drawMark cell (Just O) = drawO $ intToGrid cell
-drawMark cell Nothing  = Blank
+drawMark _    Nothing  = Blank
 
+xPicture :: Picture
 xPicture = pictures [diagonal1, diagonal2]
   where
     diagonal1 = line [(-60, -60),(60, 60)]
@@ -75,7 +76,7 @@ drawO (a, b) = translate a b (color blue (thickCircle 60 5))
 
 
 drawMarks :: Board -> Picture
-drawMarks board = pictures (zipWith drawMark [0..] board)
+drawMarks currentboard = pictures (zipWith drawMark [0..] currentboard)
 
 drawGameOverMessage :: Maybe (Maybe Player) -> Picture
 drawGameOverMessage Nothing = blank
@@ -83,6 +84,7 @@ drawGameOverMessage (Just Nothing)  = placeText "The game is a Draw, WOMP WOMP!!
 drawGameOverMessage (Just (Just X)) = placeText "Congratulations, X wins"
 drawGameOverMessage (Just (Just O)) = placeText "Congratulations, O wins"
 
+placeText :: String -> Picture
 placeText str = scale 0.3 0.3 $ translate (-700) 1050 $ color white $ text str
 
 handleEvent :: Event -> GameState -> GameState
@@ -128,23 +130,6 @@ positionToCell x y
 emptyBoard :: Board
 emptyBoard = replicate 9 Nothing
 
-showBoard :: Board -> IO ()
-showBoard ls = putStrLn $ "_____________\n" ++ (aux $ stringifyBoard ls)
-  where
-    aux [] = ""
-    aux [_] = ""
-    aux (a:b:c:rest) = "|" ++ a ++
-                       "|" ++ b ++
-                       "|" ++ c ++ "|\n" ++
-                       "_____________\n" ++ aux rest
-    aux _ = error "missalignment: possibly wrong board size"
-
-stringifyBoard :: Board -> [String]
-stringifyBoard [] = []
-stringifyBoard (Nothing:rest) = "   " : stringifyBoard rest
-stringifyBoard ((Just X):rest)  = " X " : stringifyBoard rest
-stringifyBoard ((Just O):rest)  = " O " : stringifyBoard rest
-
 makeMove :: Board -> Int -> Player -> Maybe Board
 makeMove currentBoard position player
   | position < 0 || position > 8 = Nothing
@@ -155,23 +140,6 @@ insertAt :: a -> [a] -> Int -> [a]
 insertAt _ [] _ = []
 insertAt item (_:xs) 0  = item:xs
 insertAt item (x:xs) position = x:insertAt item xs (position -1)
-
-playerTurn :: Board -> Player -> IO Board
-playerTurn currentboard player = do
-  putStrLn $ "Player: " ++ show player
-           ++ " Please enter the position of your move"
-  input <- getLine
-  case readMaybe input :: Maybe Int of
-    Just n | 1 <= n && n <= 9 ->
-        case makeMove currentboard idx player of
-          Just newState -> return newState
-          Nothing -> do
-            putStrLn "That position is taken, please try again."
-            playerTurn currentboard player
-        where idx = n - 1
-    _  -> do
-      putStrLn "That is not a valid input on the board, please try again."
-      playerTurn currentboard player
 
 checkLines :: [[Int]]
 checkLines = [[0,1,2],
@@ -220,19 +188,6 @@ testBoardxwin = [ Just X, Nothing, Just O
 switchPlayer :: Player -> Player
 switchPlayer X = O
 switchPlayer O = X
-
-
-gameLoop :: Board -> Player -> IO ()
-gameLoop currentboard player = do
-  showBoard currentboard
-  case checkWin currentboard of
-    (Just X) -> do putStrLn "Congratulations, player X wins"
-                   showBoard currentboard
-    (Just O) -> do putStrLn "Congratulations player O wins"
-                   showBoard currentboard
-    Nothing  -> if isDraw currentboard then putStrLn "The game is a draw!!! Womp Womp" >> showBoard currentboard  else
-      do nextBoard <- playerTurn currentboard player
-         gameLoop nextBoard (switchPlayer player)
 
 main :: IO ()
 main = play
