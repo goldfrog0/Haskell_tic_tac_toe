@@ -7,31 +7,41 @@ import Graphics.Gloss.Interface.Pure.Game
 
 data Player = X | O
   deriving (Eq, Show)
+-- This what functions are looking at in terms of players the type handling the population of the cells
 
 type Cell = Maybe Player
+-- cells on the board can be a players mark, or empty (Nothing)
 
 type Board = [Cell]
+-- The Board is a list that is meant to always be 9 units long, corresponding to the nine cells on a tic tac toe board.
 
 data GameState = GameState
   { board         :: Board
   , currentPlayer :: Player
   , gameOver      :: Maybe (Maybe Player)}
+-- The game state has a board, representing the current board state, the current player, and a game over condition.
+-- Maybe Player _ <- represents a player win.
+-- Maybe Nothing  <- represents a draw
+-- Nothing        <- represents no end condition
 
+-- GameState for debugging
 testGameState :: GameState
 testGameState = GameState
   { board         = testBoardDraw
   , currentPlayer = X
   , gameOver      = Nothing}
 
+-- Initial gamestate for the game
 initialState :: GameState
 initialState = GameState
   { board         = emptyBoard
   , currentPlayer = X
   , gameOver      = Nothing}
 
-drawGame :: GameState -> Picture
+drawGame :: GameState -> Picture -- create a Picture based on the current game state
 drawGame state = pictures [drawGrid, drawMarks (board state), drawGameOverMessage (gameOver state)]
 
+-- create the Picture for the gridlines only, does not change.
 drawGrid :: Picture
 drawGrid = pictures $ map (color white)
   [ horizontalLine1
@@ -44,7 +54,8 @@ drawGrid = pictures $ map (color white)
     verticalLine1   = line [(100, -300), (100, 300)]
     verticalLine2   = line [(-100, -300), (-100, 300)]
 
-intToGrid :: Int -> (Float, Float)
+-- Converts a grid index, to a grid coordinate.
+intToGrid :: Int -> (Float, Float) -- Takes an integer and gives a grid position on where to draw the mark.
 intToGrid 0 = (-200, 200)
 intToGrid 1 = (0, 200)
 intToGrid 2 = (200, 200)
@@ -56,42 +67,50 @@ intToGrid 7 = (0, -200)
 intToGrid 8 = (200, -200)
 intToGrid _ = (0,0)
 
+-- Depending on the position, and player, draw a mark on the board.
 drawMark :: Int -> Maybe Player -> Picture
-drawMark cell (Just X) = drawX $ intToGrid cell
-drawMark cell (Just O) = drawO $ intToGrid cell
-drawMark _    Nothing  = Blank
+drawMark cell (Just X) = drawX $ intToGrid cell -- If given X, draw an X on cell
+drawMark cell (Just O) = drawO $ intToGrid cell -- If given O, draw an O on cell
+drawMark _    Nothing  = Blank                  -- If no player, draw a blank.
 
+-- Defines the lines for the X "sprite"
 xPicture :: Picture
 xPicture = pictures [diagonal1, diagonal2]
   where
     diagonal1 = line [(-60, -60),(60, 60)]
     diagonal2 = line [(-60, 60),(60, -60)]
 
+-- draws an X on the grid, at coordinate tuple.
 drawX :: (Float, Float) -> Picture
 drawX (a, b) = translate a b $ color red xPicture
 
+-- draws an O on the grid, at coordinate tuple.
 drawO :: (Float, Float) -> Picture
 drawO (a, b) = translate a b (color blue (thickCircle 60 5))
 
-
+-- Given a board, generate the pictures for the grid.
 drawMarks :: Board -> Picture
-drawMarks currentboard = pictures (zipWith drawMark [0..] currentboard)
+drawMarks currentboard = pictures (zipWith drawMark [0..] currentboard) -- make list of pictures
 
+-- Prints game over messages
 drawGameOverMessage :: Maybe (Maybe Player) -> Picture
 drawGameOverMessage Nothing = blank
 drawGameOverMessage (Just Nothing)  = placeText "The game is a Draw, WOMP WOMP!!!"
 drawGameOverMessage (Just (Just X)) = placeText "Congratulations, X wins"
 drawGameOverMessage (Just (Just O)) = placeText "Congratulations, O wins"
 
+-- places text scaled, and at constant coordinates.
 placeText :: String -> Picture
 placeText str = scale 0.3 0.3 $ translate (-700) 1050 $ color white $ text str
 
+-- handles user actions in the game
 handleEvent :: Event -> GameState -> GameState
 handleEvent (EventKey (MouseButton LeftButton) Up _ (x, y)) state -- Catches mouse left click
   | isNothing $ gameOver state = tryPlacingMarkAt x y state  -- if the game is a not a draw or win, try player move
-  | otherwise = state       --Reduntant default state
+  | otherwise = state       --Redundant default state
 handleEvent _ state = state --Ignores any other input
 
+-- function to handle placing marks at coordinates to be supplied by handle event function.
 tryPlacingMarkAt :: Float -> Float -> GameState -> GameState
 tryPlacingMarkAt x y state =
   case positionToCell x y of
