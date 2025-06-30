@@ -37,7 +37,7 @@ ___
 4. Insights
 	1. --
 ## Tasks 
-- [ ] Refactor `xWin` and `oWin` function to use the (`any all`) pattern
+- [x] Refactor `xWin` and `oWin` function to use the function composition in (`all`) pattern
 - [ ] Comment the codebase.
 - [ ] UI Improvements
 	- [ ] Fix issues with text placement when displaying game over state. 
