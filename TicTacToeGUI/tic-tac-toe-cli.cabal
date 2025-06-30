@@ -68,7 +68,7 @@ executable tic-tac-toe-cli
     -- other-extensions:
 
     -- Other library packages from which modules are imported.
-    build-depends:    base ^>=4.20 && < 4.21,
+    build-depends:    base >=4.17 && < 4.21,
                       gloss
 
     -- Directories containing source files.
