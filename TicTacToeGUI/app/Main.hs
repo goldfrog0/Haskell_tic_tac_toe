@@ -112,100 +112,119 @@ handleEvent _ state = state --Ignores any other input
 
 -- function to handle placing marks at coordinates to be supplied by handle event function.
 tryPlacingMarkAt :: Float -> Float -> GameState -> GameState
-tryPlacingMarkAt x y state =
-  case positionToCell x y of
-    Nothing -> state
-    (Just idx) -> case makeMove (board state) idx (currentPlayer state) of
-      Nothing -> state
-      Just newBoard ->
-        let newGameOver = case checkWin newBoard of
-              Just winner -> Just (Just winner)
-              Nothing     -> if isDraw newBoard
-                             then Just Nothing
-                             else Nothing
-        in state { board = newBoard
+tryPlacingMarkAt x y state = -- accepting a coordinate x y here
+  case positionToCell x y of -- case match on indices that are in the counds of the grid
+    Nothing -> state         -- Not in bounds -> dont change state
+    (Just idx) -> case makeMove (board state) idx (currentPlayer state) of -- in bounds, try to place mark on grid
+      Nothing -> state                                -- looking for Maybe Board -> cell is taken -> dont change state
+      Just newBoard ->                                -- if make move is succesful
+        let newGameOver = case checkWin newBoard of   -- checking for end condition to modify state
+              Just winner -> Just (Just winner)       -- its a Just Player, we have a win.
+              Nothing     -> if isDraw newBoard       -- check its nothing Check for Draw
+                             then Just Nothing        -- draw -> Just Nothing
+                             else Nothing             -- not draw -> Nothing
+        in state { board = newBoard                   -- updating newGameOver in state
                  , currentPlayer = switchPlayer (currentPlayer state)
                  , gameOver = newGameOver }
 
+-- Takes x y coordinates, and determines which cell the coordinate is
 positionToCell :: Float -> Float -> Maybe Int
 positionToCell x y
-  | abs x > 300 || abs y > 300 = Nothing
-  | otherwise = case (col, row) of
-      (Just c, Just r) -> Just (r * 3 + c)
-      _                -> Nothing
+  | abs x > 300 || abs y > 300 = Nothing    -- check if in grid -> might be redundant TODO check redundancy
+  | otherwise = case (col, row) of          -- In grid? -> determine cell clicked on
+      (Just c, Just r) -> Just (r * 3 + c)  -- gives us the cell number
+      _                -> Nothing           -- fallback
   where
-    col
+    col                      -- determine the column
       | x < -100  = Just 0
       | x <  100  = Just 1
       | x <= 300  = Just 2
       | otherwise = Nothing
 
-    row
+    row                      -- determine the row
       | y >   100 = Just 0
       | y >  -100 = Just 1
       | y >= -300 = Just 2
       | otherwise = Nothing
 
+-- initial board state
 emptyBoard :: Board
 emptyBoard = replicate 9 Nothing
 
+-- makes a move depending on cell of board and current player
+-- potential to refactor, checking if cell is Nothing or Player instead of using insertAt function
 makeMove :: Board -> Int -> Player -> Maybe Board
 makeMove currentBoard position player
-  | position < 0 || position > 8 = Nothing
-  | isJust $ currentBoard !! position = Nothing
-  | otherwise = Just $ insertAt (Just player) currentBoard position
+  | position < 0 || position > 8 = Nothing       -- checking given index is in the board
+  | isJust $ currentBoard !! position = Nothing  -- if cell is taken -> Nothing
+  | otherwise = Just $ insertAt (Just player) currentBoard position  -- Inserts Player at cell
 
+
+-- replaces element of list at an index
 insertAt :: a -> [a] -> Int -> [a]
 insertAt _ [] _ = []
 insertAt item (_:xs) 0  = item:xs
 insertAt item (x:xs) position = x:insertAt item xs (position -1)
 
+
+-- Defines lines of board to check for wins at
 checkLines :: [[Int]]
 checkLines = [ [0,1,2], [3,4,5], [6,7,8]
              , [0,3,6], [1,4,7], [2,5,8]
              , [0,4,8], [2,4,6]]
 
+-- checks board for a win on predefined lines
 checkWin :: Board -> Maybe Player
 checkWin currentboard = aux currentboard checkLines
   where
     aux :: Board -> [[Int]] -> Maybe Player
-    aux _ [] = Nothing
+    aux _ [] = Nothing      -- base case, empty lines list, return Nothing, ie no win found
     aux input (indices:xs)
-      | xWin input indices = Just X
-      | oWin input indices = Just O
-      | otherwise       = aux currentboard xs
+      | xWin input indices = Just X   -- checks for x win on current line
+      | oWin input indices = Just O   -- checks for o win on current line
+      | otherwise = aux currentboard xs  -- no win found, recurse starting at next line
 
+-- checks board for draw
+-- TODO refactor, to remove case expression
 isDraw :: Board -> Bool
 isDraw currentboard = all isJust currentboard &&
   case checkWin currentboard of
                  Just _  -> False
                  Nothing -> True
 
+
+-- checks a list of cell positions for all Xs or Os
 xWin :: Board -> [Int] -> Bool
 xWin currentboard indices = all ((== Just X) . (currentboard !!)) indices
+
 oWin :: Board -> [Int] -> Bool
 oWin currentboard indices = all ((== Just O) . (currentboard !!)) indices
 
+
+-- test board for debugging, this one is a draw
 testBoardDraw :: Board
 testBoardDraw = [ Just X, Just O, Just X
                   , Just X, Just O, Just O
                   , Just O, Just X, Just X]
 
+-- test board for debugging, this one is a win
 testBoardxwin :: Board
 testBoardxwin = [ Just X, Nothing, Just O
                   , Just X, Just X, Just X
                   , Just O, Nothing, Nothing]
 
+-- use to change player, swaps x to o and vice versa
 switchPlayer :: Player -> Player
 switchPlayer X = O
 switchPlayer O = X
 
+-- game entry point, using gloss play function
 main :: IO ()
 main = play
-  (InWindow "Tic Tac Toe" (400, 400) (100, 100))
-  black
-  10
-  initialState
-  drawGame
-  handleEvent
-  (\_ s -> s)
+  (InWindow "Tic Tac Toe" (400, 400) (100, 100))  -- determines window size
+  black                                           -- background window color
+  10                                              -- frame rate
+  initialState                                    -- initial state goes here
+  drawGame                                        -- defines how to draw game based on state
+  handleEvent                                     -- defines how to handle user events to modify state
+  (\_ s -> s)                                     -- defines state modification based on time passing, not used here.
