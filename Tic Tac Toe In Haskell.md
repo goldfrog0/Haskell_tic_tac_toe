@@ -39,6 +39,8 @@ ___
 ## Tasks 
 - [x] Refactor `xWin` and `oWin` function to use the function composition in (`all`) pattern
 - [ ] Comment the codebase.
+  - [x] GUI version commented 
+  - [ ] cli version commented
 - [ ] UI Improvements
 	- [ ] Fix issues with text placement when displaying game over state. 
 	- [ ] Add close game button
