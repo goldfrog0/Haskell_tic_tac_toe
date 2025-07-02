@@ -54,7 +54,7 @@ extra-doc-files:    CHANGELOG.md
 common warnings
     ghc-options: -Wall
 
-executable tic-tac-toe-cli
+executable tic-tac-toe-gui
     -- Import common warning flags.
     import:           warnings
 

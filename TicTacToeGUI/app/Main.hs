@@ -1,8 +1,27 @@
 module Main where
 
-import Data.Maybe
+import Data.Maybe ( isJust, isNothing )
 import Graphics.Gloss
+    ( black,
+      blue,
+      red,
+      white,
+      blank,
+      color,
+      line,
+      pictures,
+      scale,
+      text,
+      thickCircle,
+      translate,
+      play,
+      Display(InWindow),
+      Picture(Blank) )
 import Graphics.Gloss.Interface.Pure.Game
+    ( Key(MouseButton),
+      KeyState(Up),
+      MouseButton(LeftButton),
+      Event(EventKey) )
 
 
 data Player = X | O
@@ -16,9 +35,9 @@ type Board = [Cell]
 -- The Board is a list that is meant to always be 9 units long, corresponding to the nine cells on a tic tac toe board.
 
 data GameState = GameState
-  { board         :: Board
-  , currentPlayer :: Player
-  , gameOver      :: Maybe (Maybe Player)}
+  { board         :: !Board
+  , currentPlayer :: !Player
+  , gameOver      :: !(Maybe (Maybe Player))}
 -- The game state has a board, representing the current board state, the current player, and a game over condition.
 -- Maybe Player _ <- represents a player win.
 -- Maybe Nothing  <- represents a draw
@@ -133,7 +152,7 @@ positionToCell x y
   | abs x > 300 || abs y > 300 = Nothing    -- check if in grid -> might be redundant DONE check redundancy
   | otherwise = case (col, row) of          -- In grid? -> determine cell clicked on
       (Just c, Just r) -> Just (r * 3 + c)  -- gives us the cell number
-      _                -> Nothing           -- fallback
+      _anyOtherCase    -> Nothing           -- fallback
   where
     col                      -- determine the column
       | x < -100  = Just 0

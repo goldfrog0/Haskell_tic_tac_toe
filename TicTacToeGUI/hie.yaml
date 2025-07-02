@@ -1,3 +1,5 @@
 cradle:
   cabal:
-    component: exe:tic-tac-toe-gui
+
+    - path: "./app"
+      component: "exe:tic-tac-toe-gui"
