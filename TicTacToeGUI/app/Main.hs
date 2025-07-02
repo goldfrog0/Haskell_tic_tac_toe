@@ -130,7 +130,7 @@ tryPlacingMarkAt x y state = -- accepting a coordinate x y here
 -- Takes x y coordinates, and determines which cell the coordinate is
 positionToCell :: Float -> Float -> Maybe Int
 positionToCell x y
-  | abs x > 300 || abs y > 300 = Nothing    -- check if in grid -> might be redundant TODO check redundancy
+  | abs x > 300 || abs y > 300 = Nothing    -- check if in grid -> might be redundant DONE check redundancy
   | otherwise = case (col, row) of          -- In grid? -> determine cell clicked on
       (Just c, Just r) -> Just (r * 3 + c)  -- gives us the cell number
       _                -> Nothing           -- fallback
@@ -161,6 +161,7 @@ makeMove currentBoard position player
 
 
 -- replaces element of list at an index
+-- if its out of range, does nothing
 insertAt :: a -> [a] -> Int -> [a]
 insertAt _ [] _ = []
 insertAt item (_:xs) 0  = item:xs
@@ -185,20 +186,19 @@ checkWin currentboard = aux currentboard checkLines
       | otherwise = aux currentboard xs  -- no win found, recurse starting at next line
 
 -- checks board for draw
--- TODO refactor, to remove case expression
 isDraw :: Board -> Bool
-isDraw currentboard = all isJust currentboard &&
-  case checkWin currentboard of
-                 Just _  -> False
-                 Nothing -> True
+isDraw currentboard =
+  all isJust currentboard &&  -- checks that current board is filled
+ isNothing (checkWin currentboard)  -- checks no one has won
+
 
 
 -- checks a list of cell positions for all Xs or Os
 xWin :: Board -> [Int] -> Bool
-xWin currentboard indices = all ((== Just X) . (currentboard !!)) indices
+xWin currentboard  = all $ (== Just X).(currentboard !!)
 
 oWin :: Board -> [Int] -> Bool
-oWin currentboard indices = all ((== Just O) . (currentboard !!)) indices
+oWin currentboard  = all $ (== Just O).(currentboard !!)
 
 
 -- test board for debugging, this one is a draw
